@@ -1,0 +1,19 @@
+{
+  "name": "20260512_chrome-extension_youtube_subtitle_budoux_line-break_automation",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "budoux": "^0.8.3"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.0"
+  }
+}

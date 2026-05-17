@@ -1,0 +1,86 @@
+Better Japanese Captions — Chrome Web Store 提出メモ
+=====================================================
+
+■ プライバシーポリシー URL（必ず HTTPS で公開してください）
+--------------------------------------------------------
+このリポジトリの docs/privacy-policy.html を、そのままホストします。
+
+例（GitHub の場合）:
+  - Settings → Pages → Branch main / folder /docs → Save
+  - 公開後 URL のイメージ:
+    https://<あなたのユーザー名>.github.io/<リポジトリ名>/privacy-policy.html
+
+公開できたら、その URL をダッシュボードの Privacy practices に貼り付けます。
+
+
+■ ZIP の作り方（ルートに manifest）
+--------------------------------------------------------
+プロジェクトルートで:
+
+  bash scripts/package-extension.sh
+
+生成先: release/BetterJapaneseCaptions-<version>.zip
+含めるもの: manifest.json / icons/ / dist/ のみ（node_modules は含めない）
+
+
+■ ストア用スクリーンショット（1280×800）
+--------------------------------------------------------
+store-assets/screenshots/
+  01-before.png
+  02-after.png
+
+
+■ manifest と整合させる短文（132 文字以内の Summary にそのまま使える）
+-----------------------------------------------------
+Cleaner line breaks for Japanese captions on YouTube—powered by Budoux.
+
+
+■ Detailed description（ダッシュボードの詳細説明用・英語）
+-----------------------------------------------------
+Better Japanese Captions reflows Japanese subtitle lines on YouTube so they break at more natural places—easier to read at a glance.
+
+How it works:
+• Runs only on youtube.com pages (desktop and mobile domains declared in the manifest).
+• Uses Budoux-style segmentation bundled inside the extension—no caption text is sent to a developer-operated server.
+• Includes an on-player toggle to restore YouTube’s original caption layout when you want to compare.
+
+Privacy:
+• No accounts, no analytics SDKs, no remote caption uploads by this extension.
+• See the Privacy Policy linked from the listing for details.
+
+
+■ Detailed description（日本語ローカライズ欄がある場合）
+-----------------------------------------------------
+YouTube の日本語字幕が、読みやすい位置で改行されるようにレイアウトを調整します。処理はブラウザ内のみです。
+
+• 動作するサイトはマニフェストで指定した YouTube のみです。
+• Budoux を同梱したモデルで分割します。開発者のサーバーへ字幕を送信しません。
+• プレーヤー上のトグルで、YouTube 本来の字幕レイアウトに戻せます。
+• アカウント不要・アプリ内解析・字幕の外部送信はありません。
+
+
+■ Single purpose（単一用途の説明文・英語）
+-----------------------------------------------------
+This extension has one purpose: to improve readability of Japanese captions on YouTube by adjusting line breaks locally in the browser.
+
+
+■ Host permission justification（ホスト権限の理由・英語）
+-----------------------------------------------------
+Access is limited to YouTube domains where captions appear (youtube.com, www.youtube.com, m.youtube.com). The content script reads and adjusts only the caption DOM on those pages.
+
+
+■ Permission justification（権限）
+-----------------------------------------------------
+Manifest に declarative の host_permissions はなく、content_scripts.matches で YouTube に限定されています。追加のブラウザ権限（tabs / storage API など）はマニフェストに宣言していません。
+
+
+■ Data disclosure（データの取り扱い・ストアのアンケート用の要点）
+-----------------------------------------------------
+• Does the extension collect user data? No remote collection by the developer.
+• Caption text is processed locally; toggle preference may persist via normal web storage on YouTube origin only.
+• No sale of user data.
+
+
+■ 連絡先の埋め込み
+-----------------------------------------------------
+docs/privacy-policy.html の末尾「連絡先」を、実際のサポート URL またはメールに差し替えてから公開してください。
