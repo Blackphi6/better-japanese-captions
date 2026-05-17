@@ -1,16 +1,21 @@
 Better Japanese Captions — Chrome Web Store 提出メモ
 =====================================================
 
-■ プライバシーポリシー URL（必ず HTTPS で公開してください）
+■ プライバシーポリシー URL（HTTPS・公開済み）
 --------------------------------------------------------
-このリポジトリの docs/privacy-policy.html を、そのままホストします。
+次をストアの Privacy policy にそのまま貼れます：
 
-例（GitHub の場合）:
-  - Settings → Pages → Branch main / folder /docs → Save
-  - 公開後 URL のイメージ:
-    https://<あなたのユーザー名>.github.io/<リポジトリ名>/privacy-policy.html
+  https://blackphi6.github.io/better-japanese-captions/privacy-policy.html
 
-公開できたら、その URL をダッシュボードの Privacy practices に貼り付けます。
+
+■ ソースコード・リポジトリ
+--------------------------------------------------------
+  https://github.com/Blackphi6/better-japanese-captions
+
+
+※上記公開は legacy Pages（ブランチ main / docs）でこのマシンから有効化済みです。
+GitHub が反映するまで 1〜2 分かかる場合があります。
+
 
 
 ■ ZIP の作り方（ルートに manifest）
@@ -81,6 +86,7 @@ Manifest に declarative の host_permissions はなく、content_scripts.matche
 • No sale of user data.
 
 
-■ 連絡先の埋め込み
+■ 連絡先
 -----------------------------------------------------
-docs/privacy-policy.html の末尾「連絡先」を、実際のサポート URL またはメールに差し替えてから公開してください。
+プライバシーポリシー末尾の連絡先は GitHub Issues にリンク済みです。
+
