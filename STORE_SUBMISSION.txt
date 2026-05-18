@@ -1,47 +1,18 @@
-Better Japanese Captions — Chrome Web Store 提出メモ
-=====================================================
+Better Japanese Captions — Chrome ウェブストア「掲載情報」への対応表
+================================================================
 
-■ プライバシーポリシー URL（HTTPS・公開済み）
---------------------------------------------------------
-次をストアの Privacy policy にそのまま貼れます：
-
-  https://blackphi6.github.io/better-japanese-captions/privacy-policy.html
+※ 入力欄はコピペ用の見出し（■）は貼らず、本文だけ貼ってください。
 
 
-■ ソースコード・リポジトリ
---------------------------------------------------------
-  https://github.com/Blackphi6/better-japanese-captions
+── パッケージのタイトル（すべての言語用でも可／manifest と揃える） ─────────
+Better Japanese Captions
 
 
-※上記公開は legacy Pages（ブランチ main / docs）でこのマシンから有効化済みです。
-GitHub が反映するまで 1〜2 分かかる場合があります。
-
-
-
-■ ZIP の作り方（ルートに manifest）
---------------------------------------------------------
-プロジェクトルートで:
-
-  bash scripts/package-extension.sh
-
-生成先: release/BetterJapaneseCaptions-<version>.zip
-含めるもの: manifest.json / icons/ / dist/ のみ（node_modules は含めない）
-
-
-■ ストア用スクリーンショット（1280×800）
---------------------------------------------------------
-store-assets/screenshots/
-  01-before.png
-  02-after.png
-
-
-■ manifest と整合させる短文（132 文字以内の Summary にそのまま使える）
------------------------------------------------------
+── パッケージの概要（短文・132文字以内／manifest の description と同じでも可） ─
 Cleaner line breaks for Japanese captions on YouTube—powered by Budoux.
 
 
-■ Detailed description（ダッシュボードの詳細説明用・英語）
------------------------------------------------------
+── 説明（最大 16,000 文字用。英語で書いてよい。そのまま下のブロックを貼る） ─────
 Better Japanese Captions reflows Japanese subtitle lines on YouTube so they break at more natural places—easier to read at a glance.
 
 How it works:
@@ -53,40 +24,78 @@ Privacy:
 • No accounts, no analytics SDKs, no remote caption uploads by this extension.
 • See the Privacy Policy linked from the listing for details.
 
+────────────────（任意）説明に日本語段落も足す場合（同じ説明欄で続けて書く） ─────────
+▼ または「日本語のみの一覧ページ」を増やせる場合はローカライズ欄へ
 
-■ Detailed description（日本語ローカライズ欄がある場合）
------------------------------------------------------
-YouTube の日本語字幕が、読みやすい位置で改行されるようにレイアウトを調整します。処理はブラウザ内のみです。
+YouTube の日本語字幕が、読みやすい位置で改行されるようにレイアウトを調整します。処理はすべてブラウザ内で行われます。
 
-• 動作するサイトはマニフェストで指定した YouTube のみです。
-• Budoux を同梱したモデルで分割します。開発者のサーバーへ字幕を送信しません。
-• プレーヤー上のトグルで、YouTube 本来の字幕レイアウトに戻せます。
-• アカウント不要・アプリ内解析・字幕の外部送信はありません。
+• 対象サイトはマニフェストで指定した YouTube（youtube.com／www／m のみ）。
+• Budoux に相当するモデルを同梱しローカルで分割。開発者運用サーバーへの字幕送信はありません。
+• プレーヤー横のトグルで、本来の字幕レイアウトに戻して比較できます。
+• アカウント不要・アプリ内解析・字幕データの開発者側収集なし。
 
 
-■ Single purpose（単一用途の説明文・英語）
------------------------------------------------------
+── カテゴリ（一覧から選択） ─────────────────────────────────
+推奨: 「生産性（Productivity）」またはツール／アクセシビリティ寄りなら「ユーザー補助（Accessibility）」（UI の日本語ラベルはストア側表示に合わせる）。
+
+
+── 言語 ───────────────────────────────────────────────
+日本語コンテンツ向けのアイテムなら「Japanese（日本語）」を指定。説明だけ英語なら追加で English でも可。
+
+
+── ショップアイコン（128×128） ─────────────────────────────────
+ローカルファイル: icons/icon128.png （この PNG をドラッグ＆ドロップ）
+
+プロジェクト内パスを開くとき:
+<Vol>/20260512_chrome-extension_youtube_subtitle_budoux_line-break_automation/icons/icon128.png
+
+
+── スクリーンショット（1〜5 枚／1280×800 または 640×400・JPEG または 24bit PNG） ─
+store-assets/screenshots/01-before.png
+store-assets/screenshots/02-after.png
+
+
+── プロモーション動画（任意・空欄で可） ─────────────────────────────
+不要なら入力しない。
+
+
+── プロモーションタイル・小／マーキー（任意） ─────────────────────────
+不要なら空欄のままで可（審査通過には必須ではない）。
+
+
+── ホームページ URL（公式 URL が「なし」のときは入力推奨） ─────────────
+https://github.com/Blackphi6/better-japanese-captions
+
+
+── サポート URL ──────────────────────────────────────────
+https://github.com/Blackphi6/better-japanese-captions/issues
+
+
+── 別画面：プライバシー・権限・アンケート（掲載情報タブとは別にあることが多い） ──
+
+Privacy policy の URL にそのまま貼る:
+https://blackphi6.github.io/better-japanese-captions/privacy-policy.html
+
+
+Single purpose（単一用途）、英語:
 This extension has one purpose: to improve readability of Japanese captions on YouTube by adjusting line breaks locally in the browser.
 
 
-■ Host permission justification（ホスト権限の理由・英語）
------------------------------------------------------
+Host / site access justification（英語）:
 Access is limited to YouTube domains where captions appear (youtube.com, www.youtube.com, m.youtube.com). The content script reads and adjusts only the caption DOM on those pages.
 
 
-■ Permission justification（権限）
------------------------------------------------------
-Manifest に declarative の host_permissions はなく、content_scripts.matches で YouTube に限定されています。追加のブラウザ権限（tabs / storage API など）はマニフェストに宣言していません。
+Manifest（権限の事実確認）:
+No host_permissions wildcard. Host access only via content_scripts.matches for https://youtube.com/, https://www.youtube.com/, https://m.youtube.com/ . No extra manifest permissions declared (tabs, storage API, etc.).
 
 
-■ Data disclosure（データの取り扱い・ストアのアンケート用の要点）
------------------------------------------------------
-• Does the extension collect user data? No remote collection by the developer.
-• Caption text is processed locally; toggle preference may persist via normal web storage on YouTube origin only.
-• No sale of user data.
+データ開示・アンケート用の要点:
+• Developer does not remotely collect caption text or sell user data.
+• Processing is local; toggle state may persist on the YouTube origin only via normal browser storage.
 
 
-■ 連絡先
------------------------------------------------------
-プライバシーポリシー末尾の連絡先は GitHub Issues にリンク済みです。
+── パッケージファイル（別ステップ・アップロード） ───────────────────────
+release/BetterJapaneseCaptions-<version>.zip
+（現在のフォルダで再生成するとき）
+  bash scripts/package-extension.sh
 
