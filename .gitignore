@@ -3,3 +3,5 @@ node_modules/
 *.log
 .env
 .env.*
+# Store upload artifacts (regenerate with scripts/package-extension.sh)
+release/*.zip

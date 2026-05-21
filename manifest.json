@@ -1,12 +1,27 @@
 {
   "manifest_version": 3,
   "name": "Better Japanese Captions",
-  "version": "1.0.5",
+  "version": "1.0.7",
   "description": "Cleaner line breaks for Japanese captions on YouTube—powered by Budoux.",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
+  },
+  "permissions": [
+    "activeTab"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "commands": {
+    "toggle-budoux-captions": {
+      "suggested_key": {
+        "default": "Alt+Shift+C",
+        "mac": "Alt+Shift+C"
+      },
+      "description": "Toggle Better Japanese Captions (on/off)"
+    }
   },
   "content_scripts": [
     {

@@ -649,6 +649,19 @@
       var MIN_FLAT_CHARS_TO_REMERGE_NATIVE_MULTILINE = 54;
       var captionBackup = null;
       var tooltipAnchorHost = null;
+      var cachedToggleShortcut = "";
+      function fetchToggleShortcut(done) {
+        try {
+          chrome.runtime.sendMessage({ type: "BUDOUX_GET_TOGGLE_SHORTCUT" }, (res) => {
+            if (chrome.runtime.lastError) cachedToggleShortcut = "";
+            else cachedToggleShortcut = (res && res.shortcut) || "";
+            done();
+          });
+        } catch {
+          cachedToggleShortcut = "";
+          done();
+        }
+      }
       function loadBudouxEnabled() {
         try {
           const v = localStorage.getItem(STORAGE_KEY);
@@ -804,6 +817,16 @@
   opacity: 0.88;
   line-height: 1.35;
 }
+.ytp-budoux-jwbreak-tooltip-shortcut {
+  display: block;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 10px;
+  font-weight: 400;
+  opacity: 0.85;
+  line-height: 1.35;
+}
 /* \u30B3\u30F3\u30C8\u30ED\u30FC\u30EB\u30D0\u30FC\u4E0A\u306E\u30C8\u30B0\u30EB\uFF08\u30A2\u30A4\u30B3\u30F3\u62E1\u5927\u306B\u5408\u308F\u305B\u3066\u3084\u3084\u5927\u578B\uFF09 */
 .${CLS_SWITCH} {
   position: relative;
@@ -872,8 +895,11 @@
       }
       function updateTooltipContent(tip) {
         const on = budouxCaptionEnabled;
-        const detail = on ? "\u8AAD\u307F\u3084\u3059\u3044\u4F4D\u7F6E\u3067\u6539\u884C\u3057\u3066\u3044\u307E\u3059\uFF08\u30AF\u30EA\u30C3\u30AF\u3067\u5143\u306E\u5B57\u5E55\u3069\u304A\u308A\uFF09" : "YouTube \u306E\u5143\u306E\u6539\u884C\u3069\u304A\u308A\u3067\u3059\uFF08\u30AF\u30EA\u30C3\u30AF\u3067\u8AAD\u307F\u3084\u3059\u304F\u6574\u5F62\uFF09";
-        tip.innerHTML = `<span class="ytp-budoux-jwbreak-tooltip-name">${escapeHtml(UI_TOGGLE_LABEL)}</span><span class="ytp-budoux-jwbreak-tooltip-desc">${escapeHtml(detail)}</span>`;
+        const baseDetail = on ? "\u8AAD\u307F\u3084\u3059\u3044\u4F4D\u7F6E\u3067\u6539\u884C\u3057\u3066\u3044\u307E\u3059\uFF08\u30AF\u30EA\u30C3\u30AF\u3067\u5143\u306E\u5B57\u5E55\u3069\u304A\u308A\uFF09" : "YouTube \u306E\u5143\u306E\u6539\u884C\u3069\u304A\u308A\u3067\u3059\uFF08\u30AF\u30EA\u30C3\u30AF\u3067\u8AAD\u307F\u3084\u3059\u304F\u6574\u5F62\uFF09";
+        const shortcutLine = cachedToggleShortcut
+          ? `\u30B7\u30E7\u30FC\u30C8\u30AB\u30C3\u30C8: ${escapeHtml(cachedToggleShortcut)}`
+          : "\u30B7\u30E7\u30FC\u30C8\u30AB\u30C3\u30C8: \u672A\u8A2D\u5B9A\uFF08\u62E1\u5F35\u6A5F\u80FD \u003E \u30AD\u30FC\u30DC\u30FC\u30C9\u30B7\u30E7\u30FC\u30C8\u30AB\u30C3\u30C8\u3067\u5909\u66F4\uFF09";
+        tip.innerHTML = `<span class="ytp-budoux-jwbreak-tooltip-name">${escapeHtml(UI_TOGGLE_LABEL)}</span><span class="ytp-budoux-jwbreak-tooltip-desc">${escapeHtml(baseDetail)}</span><span class="ytp-budoux-jwbreak-tooltip-shortcut">${shortcutLine}</span>`;
       }
       function updateToggleSwitchAppearance(host, sw) {
         const on = budouxCaptionEnabled;
@@ -928,14 +954,16 @@
       function showBodyTooltip(host) {
         tooltipAnchorHost = host;
         bindGlobalTooltipLayoutSync();
-        const tip = getBodyTooltipEl();
-        updateTooltipContent(tip);
-        tip.style.display = "block";
-        tip.style.visibility = "visible";
-        tip.style.opacity = "1";
-        requestAnimationFrame(() => {
-          layoutBodyTooltipNearHost(host);
-          requestAnimationFrame(() => layoutBodyTooltipNearHost(host));
+        fetchToggleShortcut(() => {
+          const tip = getBodyTooltipEl();
+          updateTooltipContent(tip);
+          tip.style.display = "block";
+          tip.style.visibility = "visible";
+          tip.style.opacity = "1";
+          requestAnimationFrame(() => {
+            layoutBodyTooltipNearHost(host);
+            requestAnimationFrame(() => layoutBodyTooltipNearHost(host));
+          });
         });
       }
       function hideBodyTooltip() {
@@ -1075,6 +1103,25 @@
         }
         return sw;
       }
+      function toggleBudouxCaptionFromHotkey() {
+        try {
+          saveBudouxEnabled(!budouxCaptionEnabled);
+          ensureToggleInjected();
+          const host = queryInMoviePlayer(`#${TOGGLE_HOST_ID}`);
+          const sw = host instanceof HTMLElement ? host.querySelector("[data-yt-budoux-switch]") : null;
+          if (host && sw) updateToggleSwitchAppearance(host, sw);
+          processCaptionsNow();
+        } catch {
+        }
+      }
+      chrome.runtime.onMessage.addListener((msg, _sender, respond) => {
+        if (msg && msg.type === "BUDOUX_TOGGLE_HOTKEY") {
+          toggleBudouxCaptionFromHotkey();
+          respond({ ok: true });
+          return true;
+        }
+        return void 0;
+      });
       function ensureToggleInjected() {
         ensureBudouxToggleStyles();
         if (!queryInMoviePlayer(".ytp-right-controls") && !queryInMoviePlayer(".ytp-subtitles-button")) return;
