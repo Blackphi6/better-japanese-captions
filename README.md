@@ -10,7 +10,7 @@ YouTube の日本語字幕の改行を、ブラウザ内で読みやすく整え
 2. `bash scripts/package-extension.sh` で `release/BetterJapaneseCaptions-<version>.zip` を生成し、それをウェブストアにアップロードする。
 3. コミットをリモート（GitHub）へプッシュする。必要ならタグを打つ（例: `git tag v1.0.7 && git push origin v1.0.7`）。
 
-プライバシー権限文言などは `STORE_SUBMISSION.txt` を参照。
+掲載説明・権限の説明文などのコピペ用メモはローカルのみ `STORE_SUBMISSION.txt` に置く（Git では追跡しない。ストアの開発者向け画面と二重管理にする用途）。
 
 ## ローカルで試す
 
