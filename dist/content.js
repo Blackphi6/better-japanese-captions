@@ -888,6 +888,57 @@
   outline: 2px solid rgba(255, 255, 255, 0.95);
   outline-offset: 2px;
 }
+.ytp-caption-window-container .ytp-caption-window[${ATTR_DONE}="1"],
+.ytp-caption-window-container .caption-window[${ATTR_DONE}="1"] {
+  left: 50% !important;
+  right: auto !important;
+  width: fit-content !important;
+  max-width: calc(100% - 48px) !important;
+  min-width: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  box-sizing: border-box !important;
+  text-align: center !important;
+  transform: translateX(-50%) !important;
+}
+.ytp-caption-window-container .ytp-caption-window[${ATTR_DONE}="1"] .caption-visual-line,
+.ytp-caption-window-container .caption-window[${ATTR_DONE}="1"] .caption-visual-line {
+  opacity: 1;
+  animation: yt-budoux-caption-fade-in 180ms ease-out both;
+}
+.ytp-caption-window-container .ytp-caption-window[${ATTR_DONE}="1"] > .ytp-caption-segment,
+.ytp-caption-window-container .caption-window[${ATTR_DONE}="1"] > .ytp-caption-segment,
+.ytp-caption-window-container .ytp-caption-window[${ATTR_DONE}="1"] .ytp-caption-window-inner > .ytp-caption-segment,
+.ytp-caption-window-container .caption-window[${ATTR_DONE}="1"] .ytp-caption-window-inner > .ytp-caption-segment,
+.ytp-caption-window-container .ytp-caption-window[${ATTR_DONE}="1"] .captions-text > .ytp-caption-segment,
+.ytp-caption-window-container .caption-window[${ATTR_DONE}="1"] .captions-text > .ytp-caption-segment {
+  opacity: 1;
+  animation: yt-budoux-caption-fade-in 180ms ease-out both;
+}
+@keyframes yt-budoux-caption-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ytp-caption-window-container .ytp-caption-window[${ATTR_DONE}="1"] .caption-visual-line,
+  .ytp-caption-window-container .caption-window[${ATTR_DONE}="1"] .caption-visual-line,
+  .ytp-caption-window-container .ytp-caption-window[${ATTR_DONE}="1"] > .ytp-caption-segment,
+  .ytp-caption-window-container .caption-window[${ATTR_DONE}="1"] > .ytp-caption-segment,
+  .ytp-caption-window-container .ytp-caption-window[${ATTR_DONE}="1"] .ytp-caption-window-inner > .ytp-caption-segment,
+  .ytp-caption-window-container .caption-window[${ATTR_DONE}="1"] .ytp-caption-window-inner > .ytp-caption-segment,
+  .ytp-caption-window-container .ytp-caption-window[${ATTR_DONE}="1"] .captions-text > .ytp-caption-segment,
+  .ytp-caption-window-container .caption-window[${ATTR_DONE}="1"] .captions-text > .ytp-caption-segment {
+    animation: none;
+  }
+}
 `;
       }
       function escapeHtml(s) {
@@ -1916,6 +1967,29 @@
           "margin-right",
           "box-sizing"
         ].forEach((p) => parent.style.removeProperty(p));
+        const captionWindow = parent.closest(".ytp-caption-window, .caption-window");
+        if (captionWindow instanceof HTMLElement) clearCaptionWindowReflowLayout(captionWindow);
+      }
+      function clearCaptionWindowReflowLayout(captionWindow) {
+        if (!(captionWindow instanceof HTMLElement)) return;
+        [
+          "display",
+          "flex-direction",
+          "align-items",
+          "justify-content",
+          "text-align",
+          "width",
+          "max-width",
+          "min-width",
+          "margin-left",
+          "margin-right",
+          "padding-left",
+          "padding-right",
+          "box-sizing",
+          "left",
+          "right",
+          "transform"
+        ].forEach((p) => captionWindow.style.removeProperty(p));
       }
       function restoreStyleAttribute(el, styleText) {
         if (!(el instanceof HTMLElement)) return;
@@ -1933,6 +2007,15 @@
           windowStyle: captionWindow instanceof HTMLElement ? captionWindow.getAttribute("style") : null
         };
       }
+      function ensureCaptionBackupForHash(parent, captionWindow, textHash) {
+        if (
+          !captionWindow.hasAttribute(ATTR_DONE) ||
+          !captionBackup ||
+          captionBackup.textHash !== textHash
+        ) {
+          captionBackup = makeCaptionBackup(parent, captionWindow, textHash);
+        }
+      }
       function applyCaptionContentParentReflowLayout(parent) {
         if (!(parent instanceof HTMLElement)) return;
         parent.style.setProperty("display", "flex", "important");
@@ -1945,6 +2028,37 @@
         parent.style.setProperty("margin-left", "auto", "important");
         parent.style.setProperty("margin-right", "auto", "important");
         parent.style.setProperty("box-sizing", "border-box", "important");
+        const captionWindow = parent.closest(".ytp-caption-window, .caption-window");
+        if (captionWindow instanceof HTMLElement) applyCaptionWindowReflowLayout(captionWindow);
+      }
+      function applyCaptionWindowReflowLayout(captionWindow) {
+        if (!(captionWindow instanceof HTMLElement)) return;
+        captionWindow.style.setProperty("left", "50%", "important");
+        captionWindow.style.setProperty("right", "auto", "important");
+        captionWindow.style.setProperty("width", "fit-content", "important");
+        captionWindow.style.setProperty("max-width", "calc(100% - 48px)", "important");
+        captionWindow.style.setProperty("min-width", "0", "important");
+        captionWindow.style.setProperty("margin-left", "0", "important");
+        captionWindow.style.setProperty("margin-right", "0", "important");
+        captionWindow.style.setProperty("padding-left", "0", "important");
+        captionWindow.style.setProperty("padding-right", "0", "important");
+        captionWindow.style.setProperty("box-sizing", "border-box", "important");
+        captionWindow.style.setProperty("text-align", "center", "important");
+        captionWindow.style.setProperty("display", "flex", "important");
+        captionWindow.style.setProperty("flex-direction", "column", "important");
+        captionWindow.style.setProperty("align-items", "center", "important");
+        captionWindow.style.setProperty("justify-content", "center", "important");
+        captionWindow.style.setProperty("transform", "translateX(-50%)", "important");
+      }
+      function centerCaptionWithoutReflow(parent, captionWindow, rawText) {
+        const raw = normalizeJpCaptionLine(rawText);
+        if (!raw || !isPrimarilyJapanese(raw)) return false;
+        const h = hashText(raw);
+        ensureCaptionBackupForHash(parent, captionWindow, h);
+        applyCaptionContentParentReflowLayout(parent);
+        captionWindow.setAttribute(ATTR_HASH, h);
+        captionWindow.setAttribute(ATTR_DONE, "1");
+        return true;
       }
       function captionLineWithSegment(lineText, inheritedStyle) {
         const line = document.createElement("div");
@@ -2049,10 +2163,12 @@
           return;
         }
         if (shouldPreserveNativeMultilineCueLayout(lineTextsPre)) {
-          captionWindow.removeAttribute(ATTR_HASH);
-          captionWindow.removeAttribute(ATTR_DONE);
-          captionBackup = null;
-          clearCaptionContentParentReflowLayout(parentProbe);
+          if (!centerCaptionWithoutReflow(parentProbe, captionWindow, flatJoinForRules)) {
+            captionWindow.removeAttribute(ATTR_HASH);
+            captionWindow.removeAttribute(ATTR_DONE);
+            captionBackup = null;
+            clearCaptionContentParentReflowLayout(parentProbe);
+          }
           return;
         }
         const flatForTokoro = flatJoinForRules;
@@ -2332,12 +2448,17 @@
         }
         const h = hashText(raw);
         const chunks = parseJpCaptionChunks(raw);
-        if (!chunks.length) return;
+        if (!chunks.length) {
+          centerCaptionWithoutReflow(parentProbe, captionWindow, raw);
+          return;
+        }
         const lines = balanceLines(chunks, maxCaptionLinesForFlatDisplay(raw));
         if (lines.length <= 1) {
-          captionWindow.removeAttribute(ATTR_DONE);
-          captionWindow.removeAttribute(ATTR_HASH);
-          clearCaptionContentParentReflowLayout(parentProbe);
+          if (!centerCaptionWithoutReflow(parentProbe, captionWindow, raw)) {
+            captionWindow.removeAttribute(ATTR_DONE);
+            captionWindow.removeAttribute(ATTR_HASH);
+            clearCaptionContentParentReflowLayout(parentProbe);
+          }
           return;
         }
         const parent = findContentParent(captionWindow);
