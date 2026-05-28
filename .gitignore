@@ -3,7 +3,8 @@ node_modules/
 *.log
 .env
 .env.*
-# Local only: Chrome Web Store paste notes (not in git)
+# Local only (not in git)
 STORE_SUBMISSION.txt
+DEVELOPER_NOTES.txt
 # Store upload artifacts (regenerate with scripts/package-extension.sh)
 release/*.zip
