@@ -6,5 +6,6 @@ node_modules/
 # Local only (not in git)
 STORE_SUBMISSION.txt
 DEVELOPER_NOTES.txt
+skill-state/
 # Store upload artifacts (regenerate with scripts/package-extension.sh)
 release/*.zip

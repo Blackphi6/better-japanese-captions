@@ -16,9 +16,10 @@ function isInjectableYouTubeUrl(url) {
   }
 }
 
-/** Toolbar icon tooltip: reflects the user’s current shortcut from chrome://extensions/shortcuts */
+/** Toolbar icon tooltip: reflects the user's current shortcut from chrome://extensions/shortcuts */
 async function refreshActionTitle() {
   try {
+    if (!chrome.action?.setTitle) return;
     const cmds = await chrome.commands.getAll();
     const c = cmds.find((x) => x.name === TOGGLE_COMMAND);
     const shortcut = (c?.shortcut && String(c.shortcut).trim()) || "";

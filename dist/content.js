@@ -638,6 +638,12 @@
       var KNOB_ON_FACE = "#0f0f0f";
       var CLS_TOOLTIP = "ytp-budoux-jwbreak-tooltip";
       var BODY_TOOLTIP_ID = "yt-budoux-body-tooltip";
+      var OVERLAY_ROOT_ID = "yt-budoux-caption-overlay";
+      var OVERLAY_WINDOW_CLS = "yt-budoux-caption-window";
+      var OVERLAY_TEXT_CLS = "yt-budoux-captions-text";
+      var OVERLAY_LINE_CLS = "yt-budoux-caption-line";
+      var OVERLAY_ACTIVE_CLS = "yt-budoux-overlay-active";
+      var OVERLAY_POS_KEY = "ytBudouxCaptionOverlayPositions";
       var UI_TOGGLE_LABEL = "\u5B57\u5E55\u306E\u6539\u884C";
       var CAPTION_WINDOW_SELECTORS = [
         "#movie_player .ytp-caption-window-container .ytp-caption-window",
@@ -652,6 +658,8 @@
       var lastAutoCaptionProbeAt = 0;
       var autoCaptionIncrementalCount = 0;
       var autoCaptionSuppressUntil = 0;
+      var lastOverlayHash = "";
+      var overlayApplyInProgress = false;
       var tooltipAnchorHost = null;
       var cachedToggleShortcut = "";
       function fetchToggleShortcut(done) {
@@ -676,11 +684,37 @@
         }
       }
       var budouxCaptionEnabled = loadBudouxEnabled();
+      /** 本体スタイルより先に標準字幕を隠す（document_end でも一瞬の生字幕を抑える） */
+      function ensureNativeCaptionHideCss() {
+        let el = document.getElementById("yt-budoux-native-hide");
+        if (!el) {
+          el = document.createElement("style");
+          el.id = "yt-budoux-native-hide";
+          el.textContent =
+            "html." +
+            OVERLAY_ACTIVE_CLS +
+            " .caption-window,html." +
+            OVERLAY_ACTIVE_CLS +
+            " .ytp-caption-window{display:none!important;}";
+          (document.documentElement || document.head).appendChild(el);
+        }
+        if (budouxCaptionEnabled) {
+          document.documentElement.classList.add(OVERLAY_ACTIVE_CLS);
+        }
+      }
+      ensureNativeCaptionHideCss();
       function saveBudouxEnabled(on) {
         budouxCaptionEnabled = on;
         try {
           localStorage.setItem(STORAGE_KEY, on ? "1" : "0");
         } catch {
+        }
+        // ONにした瞬間から標準を隠す（次の process まで生字幕が見えるのを防ぐ）
+        if (on) {
+          ensureNativeCaptionHideCss();
+          setNativeCaptionsHidden(true);
+        } else {
+          setNativeCaptionsHidden(false);
         }
       }
       function queryInMoviePlayer(selector) {
@@ -943,6 +977,60 @@
     animation: none;
   }
 }
+/* Immersive Translate と同じ: 標準字幕を隠し、自前オーバーレイだけ触れる */
+html.${OVERLAY_ACTIVE_CLS} .caption-window,
+html.${OVERLAY_ACTIVE_CLS} .ytp-caption-window {
+  display: none !important;
+}
+#${OVERLAY_ROOT_ID} {
+  pointer-events: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 2147483646;
+}
+#${OVERLAY_ROOT_ID} .${OVERLAY_WINDOW_CLS} {
+  pointer-events: auto;
+  position: absolute;
+  width: 90%;
+  left: 5%;
+  bottom: 30px;
+  cursor: move;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+#${OVERLAY_ROOT_ID} .${OVERLAY_TEXT_CLS} {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 100%;
+  padding: 8px 16px;
+  border-radius: 12px;
+  background: rgba(8, 8, 8, 0.75);
+  color: #fff;
+  text-align: center;
+  line-height: 1.5;
+  font-family: "YouTube Noto", Roboto, Arial, sans-serif;
+  font-size: 1.7rem;
+  text-shadow: 0 0 2px #000, 0 0 3px #000;
+  box-sizing: border-box;
+  white-space: pre-wrap;
+}
+#${OVERLAY_ROOT_ID} .${OVERLAY_LINE_CLS} {
+  display: block;
+  max-width: 100%;
+  white-space: pre-wrap;
+}
+.html5-video-player:not(.ytp-autohide) #${OVERLAY_ROOT_ID} .${OVERLAY_WINDOW_CLS}:not([data-drag-pos]) {
+  bottom: 60px;
+}
 `;
       }
       function escapeHtml(s) {
@@ -950,7 +1038,7 @@
       }
       function updateTooltipContent(tip) {
         const on = budouxCaptionEnabled;
-        const baseDetail = on ? "\u624B\u52D5\u3067\u4ED8\u3051\u3089\u308C\u305F\u65E5\u672C\u8A9E\u5B57\u5E55\u306E\u307F\u6574\u5F62\u3057\u307E\u3059\uFF08\u81EA\u52D5\u751F\u6210\u5B57\u5E55\u306F\u975E\u5BFE\u5FDC\uFF09" : "YouTube \u306E\u5143\u306E\u6539\u884C\u3069\u304A\u308A\u3067\u3059\uFF08\u30AF\u30EA\u30C3\u30AF\u3067\u65E5\u672C\u8A9E\u5B57\u5E55\u3092\u6574\u5F62\uFF09";
+        const baseDetail = on ? "\u624B\u52D5\u65E5\u672C\u8A9E\u5B57\u5E55\u3092\u6574\u5F62\uFF08\u81EA\u52D5\u751F\u6210\u306F\u975E\u5BFE\u5FDC\uFF09\u3002\u5B57\u5E55\u3092\u30C9\u30E9\u30C3\u30B0\u3057\u3066\u4F4D\u7F6E\u5909\u66F4" : "YouTube \u306E\u5143\u306E\u6539\u884C\u3069\u304A\u308A\u3067\u3059\uFF08\u30AF\u30EA\u30C3\u30AF\u3067\u65E5\u672C\u8A9E\u5B57\u5E55\u3092\u6574\u5F62\uFF09";
         const shortcutLine = cachedToggleShortcut
           ? `\u30B7\u30E7\u30FC\u30C8\u30AB\u30C3\u30C8: ${escapeHtml(cachedToggleShortcut)}`
           : "\u30B7\u30E7\u30FC\u30C8\u30AB\u30C3\u30C8: \u672A\u8A2D\u5B9A\uFF08\u62E1\u5F35\u6A5F\u80FD \u003E \u30AD\u30FC\u30DC\u30FC\u30C9\u30B7\u30E7\u30FC\u30C8\u30AB\u30C3\u30C8\u3067\u5909\u66F4\uFF09";
@@ -2523,18 +2611,278 @@
         captionWindow.setAttribute(ATTR_HASH, h);
         captionWindow.setAttribute(ATTR_DONE, "1");
       }
+
+      function overlayPositionKey() {
+        const host = location.hostname.replace(/^www\./, "");
+        if (host.includes("youtube") && location.pathname.includes("/shorts")) return `${host}-shorts`;
+        return host || "youtube";
+      }
+      function loadOverlayPositions() {
+        try {
+          const raw = localStorage.getItem(OVERLAY_POS_KEY);
+          if (!raw) return {};
+          const parsed = JSON.parse(raw);
+          return parsed && typeof parsed === "object" ? parsed : {};
+        } catch {
+          return {};
+        }
+      }
+      function saveOverlayPosition(pos) {
+        try {
+          const all = loadOverlayPositions();
+          all[overlayPositionKey()] = pos;
+          localStorage.setItem(OVERLAY_POS_KEY, JSON.stringify(all));
+        } catch {
+        }
+      }
+      function applySavedOverlayPosition(winEl) {
+        if (!(winEl instanceof HTMLElement)) return;
+        const saved = loadOverlayPositions()[overlayPositionKey()];
+        if (!saved) return;
+        if (saved.topPercent != null) {
+          let v = Number(saved.topPercent);
+          if (Number.isNaN(v)) v = 0;
+          v = Math.max(0, Math.min(100, v));
+          winEl.style.top = `${v}%`;
+          winEl.style.bottom = "unset";
+          winEl.setAttribute("data-drag-pos", "1");
+        } else if (saved.bottomPercent != null) {
+          let v = Number(saved.bottomPercent);
+          if (Number.isNaN(v)) v = 0;
+          v = Math.max(0, Math.min(100, v));
+          winEl.style.bottom = `${v}%`;
+          winEl.style.top = "unset";
+          winEl.setAttribute("data-drag-pos", "1");
+        }
+      }
+      function findOverlayMountRoot() {
+        return (
+          document.querySelector("#movie_player") ||
+          document.querySelector(".html5-video-player") ||
+          queryInMoviePlayer("video")?.closest(".html5-video-player") ||
+          null
+        );
+      }
+      function ensureOverlayMounted() {
+        const mount = findOverlayMountRoot();
+        if (!(mount instanceof HTMLElement)) return null;
+        if (getComputedStyle(mount).position === "static") {
+          mount.style.position = "relative";
+        }
+        let root = document.getElementById(OVERLAY_ROOT_ID);
+        if (!root) {
+          root = document.createElement("div");
+          root.id = OVERLAY_ROOT_ID;
+          root.setAttribute("data-yt-budoux-overlay", "1");
+          const win = document.createElement("div");
+          win.className = OVERLAY_WINDOW_CLS;
+          win.setAttribute("data-yt-budoux-overlay-window", "1");
+          const textBox = document.createElement("div");
+          textBox.className = OVERLAY_TEXT_CLS;
+          win.appendChild(textBox);
+          root.appendChild(win);
+          mount.appendChild(root);
+          bindOverlayDrag(root, win);
+          applySavedOverlayPosition(win);
+        } else if (root.parentElement !== mount) {
+          mount.appendChild(root);
+        }
+        return root;
+      }
+      function bindOverlayDrag(containerEl, winEl) {
+        if (!(containerEl instanceof HTMLElement) || !(winEl instanceof HTMLElement)) return;
+        if (winEl.dataset.dragBound === "1") return;
+        winEl.dataset.dragBound = "1";
+        let containerRect = null;
+        let winRect = null;
+        let offsetY = 0;
+        const onMove = (point) => {
+          if (!containerEl.isConnected || !winEl.isConnected) return;
+          containerRect = containerEl.getBoundingClientRect();
+          winRect = winEl.getBoundingClientRect();
+          const y = point.clientY - containerRect.top - offsetY;
+          const maxY = Math.max(0, containerRect.height - winRect.height);
+          const clamped = Math.min(Math.max(0, y), maxY);
+          const topPercent = clamped / containerRect.height * 100;
+          if (topPercent > 50) {
+            const bottomPercent = (containerRect.height - clamped - winRect.height) / containerRect.height * 100;
+            winEl.style.bottom = `${bottomPercent}%`;
+            winEl.style.top = "unset";
+            winEl.setAttribute("data-drag-pos", "1");
+            saveOverlayPosition({ bottomPercent });
+          } else {
+            winEl.style.top = `${topPercent}%`;
+            winEl.style.bottom = "unset";
+            winEl.setAttribute("data-drag-pos", "1");
+            saveOverlayPosition({ topPercent });
+          }
+        };
+        const onDown = (point) => {
+          containerRect = containerEl.getBoundingClientRect();
+          winRect = winEl.getBoundingClientRect();
+          offsetY = point.clientY - winRect.top;
+          document.addEventListener("mousemove", onMouseMove);
+          document.addEventListener("mouseup", onUp);
+          document.addEventListener("touchmove", onTouchMove, { passive: false });
+          document.addEventListener("touchend", onTouchEnd);
+          document.addEventListener("touchcancel", onTouchEnd);
+        };
+        const onMouseMove = (ev) => onMove(ev);
+        const onUp = () => cleanup();
+        const onTouchStart = (ev) => {
+          if (ev.cancelable) ev.preventDefault();
+          if (!ev.changedTouches?.[0]) return;
+          onDown(ev.changedTouches[0]);
+        };
+        const onTouchMove = (ev) => {
+          if (ev.cancelable) ev.preventDefault();
+          if (!ev.changedTouches?.[0]) return;
+          onMove(ev.changedTouches[0]);
+        };
+        const onTouchEnd = (ev) => {
+          if (ev.cancelable) ev.preventDefault();
+          cleanup();
+        };
+        const cleanup = () => {
+          document.removeEventListener("mousemove", onMouseMove);
+          document.removeEventListener("mouseup", onUp);
+          document.removeEventListener("touchmove", onTouchMove);
+          document.removeEventListener("touchend", onTouchEnd);
+          document.removeEventListener("touchcancel", onTouchEnd);
+        };
+        winEl.addEventListener("mousedown", onDown);
+        winEl.addEventListener("touchstart", onTouchStart, { passive: false });
+      }
+      function setNativeCaptionsHidden(hidden) {
+        document.documentElement.classList.toggle(OVERLAY_ACTIVE_CLS, !!hidden);
+      }
+      function setOverlayVisible(on) {
+        const root = document.getElementById(OVERLAY_ROOT_ID);
+        if (root) root.style.display = on ? "block" : "none";
+      }
+      function hideBudouxOverlay() {
+        setOverlayVisible(false);
+        lastOverlayHash = "";
+        const root = document.getElementById(OVERLAY_ROOT_ID);
+        const textBox = root?.querySelector(`.${OVERLAY_TEXT_CLS}`);
+        if (textBox) textBox.replaceChildren();
+      }
+      function applyLiveCaptionStyleToOverlayText(textBox) {
+        if (!(textBox instanceof HTMLElement)) return;
+        const live = findCaptionWindow();
+        const seg = live?.querySelector?.(".ytp-caption-segment");
+        if (!(seg instanceof HTMLElement)) return;
+        try {
+          const cs = getComputedStyle(seg);
+          if (cs.fontSize) textBox.style.fontSize = cs.fontSize;
+          if (cs.fontFamily) textBox.style.fontFamily = cs.fontFamily;
+          if (cs.fontWeight) textBox.style.fontWeight = cs.fontWeight;
+          if (cs.color) textBox.style.color = cs.color;
+        } catch {
+        }
+      }
+      function showBudouxOverlayLines(lines) {
+        const cleaned = (lines || []).map((s) => normalizeJpCaptionLine(String(s || ""))).filter(Boolean);
+        if (!cleaned.length) {
+          hideBudouxOverlay();
+          return;
+        }
+        const root = ensureOverlayMounted();
+        if (!root) return;
+        const textBox = root.querySelector(`.${OVERLAY_TEXT_CLS}`);
+        const win = root.querySelector(`.${OVERLAY_WINDOW_CLS}`);
+        if (!(textBox instanceof HTMLElement)) return;
+        textBox.replaceChildren();
+        applyLiveCaptionStyleToOverlayText(textBox);
+        for (const line of cleaned) {
+          const el = document.createElement("div");
+          el.className = OVERLAY_LINE_CLS;
+          el.textContent = glueInseparableJpCompounds(
+            readableJpCaptionInsertHalfwidthSpaces(captionStripCueBreakDotsAfterPolitenessCue(line))
+          );
+          textBox.appendChild(el);
+        }
+        if (win instanceof HTMLElement) applySavedOverlayPosition(win);
+        setNativeCaptionsHidden(true);
+        setOverlayVisible(true);
+      }
+      function readLiveCaptionFlat(captionWindow) {
+        const parent = findContentParent(captionWindow);
+        const lineTexts = extractCaptionVisualLineTexts(parent);
+        const flat = lineTexts.length > 0 ? lineTexts.join("") : collectCaptionText(parent);
+        return normalizeJpCaptionLine(flat);
+      }
+      function extractLinesFromProcessedWindow(captionWindow) {
+        const parent = findContentParent(captionWindow);
+        let lines = extractCaptionVisualLineTexts(parent);
+        if (!lines.length) {
+          const flat = normalizeJpCaptionLine(collectCaptionText(parent));
+          if (flat) lines = [flat];
+        }
+        return lines.map((s) => normalizeJpCaptionLine(String(s || ""))).filter(Boolean);
+      }
+      /**
+       * Immersive Translate と同じ: ライブな標準字幕DOMは読んだら触れない。
+       * Budoux は clone 上だけで走らせ、結果行だけオーバーレイへ出す。
+       */
       function processCaptionsNow() {
         ensureVideoCaptionListeners();
         ensureToggleInjected();
         const win = findCaptionWindow();
-        if (!win) return;
         try {
           if (!budouxCaptionEnabled) {
-            restoreOriginalIfNeeded(win);
+            if (win) restoreOriginalIfNeeded(win);
+            hideBudouxOverlay();
+            setNativeCaptionsHidden(false);
             return;
           }
-          applyBudouxToWindow(win);
+          // Immersive Translate と同じ: 整形ON中は最初から標準字幕を隠す（生字幕が一瞬出て酔うのを防ぐ）
+          setNativeCaptionsHidden(true);
+          if (!win) {
+            setOverlayVisible(false);
+            return;
+          }
+          const flat = readLiveCaptionFlat(win);
+          if (!flat) {
+            setOverlayVisible(false);
+            lastOverlayHash = "";
+            return;
+          }
+          // 自動生成・非日本語は改行しないが、標準を再表示せず生テキストをオーバーレイに出す（チラつき防止）
+          const skipReflow =
+            shouldSuppressLikelyAutoGeneratedCaption(flat) || !isPrimarilyJapanese(flat);
+          const flatHash = hashText(flat) + (skipReflow ? "|raw" : "|reflow");
+          if (flatHash && flatHash === lastOverlayHash) {
+            setOverlayVisible(true);
+            return;
+          }
+          if (skipReflow) {
+            lastOverlayHash = flatHash;
+            const liveLines = extractCaptionVisualLineTexts(findContentParent(win));
+            showBudouxOverlayLines(liveLines.length ? liveLines : [flat]);
+            return;
+          }
+          // 表示前に clone 上で改行を完了してから、オーバーレイだけ出す
+          const scratch = win.cloneNode(true);
+          scratch.removeAttribute("id");
+          captionBackup = null;
+          overlayApplyInProgress = true;
+          try {
+            applyBudouxToWindow(scratch);
+            let lines = [];
+            if (scratch.hasAttribute(ATTR_DONE)) {
+              lines = extractLinesFromProcessedWindow(scratch);
+            }
+            if (!lines.length) lines = [flat];
+            lastOverlayHash = flatHash;
+            showBudouxOverlayLines(lines);
+          } finally {
+            captionBackup = null;
+            overlayApplyInProgress = false;
+          }
         } catch {
+          captionBackup = null;
+          overlayApplyInProgress = false;
         }
       }
       var debounce = null;
@@ -2546,7 +2894,12 @@
         }, 80);
       }
       function attachObserver(root) {
-        const observer = new MutationObserver(scheduleProcess);
+        const observer = new MutationObserver((mutations) => {
+          if (overlayApplyInProgress) return;
+          const overlay = document.getElementById(OVERLAY_ROOT_ID);
+          if (overlay && mutations.every((m) => overlay.contains(m.target))) return;
+          scheduleProcess();
+        });
         observer.observe(root, {
           childList: true,
           subtree: true,
@@ -2575,9 +2928,14 @@
       }
       if (isLikelyVideoSurface()) {
         ensureBudouxToggleStyles();
+        // ページ入場時点でONなら標準字幕を先に隠す（表示→改行のチラつき防止）
+        if (budouxCaptionEnabled) setNativeCaptionsHidden(true);
         tryAttachToPlayer();
         document.addEventListener("yt-navigate-finish", () => {
           resetAutoCaptionProbeState();
+          hideBudouxOverlay();
+          if (budouxCaptionEnabled) setNativeCaptionsHidden(true);
+          else setNativeCaptionsHidden(false);
           staggeredScheduleProcess();
         });
       }
